@@ -140,7 +140,7 @@
                         Cari Data
                     </button>
 
-                    <a href="{{ url('/') }}" class="btn btn-secondary">
+                    <a href="{{ request('import_id') ? url('/?import_id=' . request('import_id')) : url('/') }}" class="btn btn-secondary">
                         Reset
                     </a>
                 </div>
