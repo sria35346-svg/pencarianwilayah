@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\DataCrawling;
+use App\Models\ImportHistory;
 use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
@@ -56,6 +57,19 @@ class DataCrawlingController extends Controller
         if ($request->filled('provinsi')) {
             $query->where('provinsi', $request->input('provinsi'));
         }
+        
+        $namaKategoriAktif = 'Semua Kategori (Keseluruhan Data)';
+
+        // Memfilter data berdasarkan riwayat impor yang dipilih.
+        if ($request->filled('import_id')) {
+            $query->where('import_history_id', $request->input('import_id'));
+            $history = ImportHistory::find($request->input('import_id'));
+            if ($history) {
+                $namaKategoriAktif = $history->kategori;
+            }
+        } elseif (session()->has('namaData')) {
+            $namaKategoriAktif = session('namaData');
+        }
 
         // Menghitung jumlah data sesuai filter.
         $totalHasilPencarian = (clone $query)->count();
@@ -70,7 +84,27 @@ class DataCrawlingController extends Controller
             'dataCrawling',
             'totalData',
             'totalHasilPencarian',
-            'daftarProvinsi'
+            'daftarProvinsi',
+            'namaKategoriAktif'
         ));
+    }
+
+    public function history()
+    {
+        $riwayatImpor = ImportHistory::latest()->get();
+        return view('data-crawling.history', compact('riwayatImpor'));
+    }
+
+    public function destroyHistory($id)
+    {
+        $history = ImportHistory::findOrFail($id);
+        
+        // Hapus semua data yang berkaitan dengan riwayat ini
+        DataCrawling::where('import_history_id', $history->id)->delete();
+        
+        // Hapus riwayat impor
+        $history->delete();
+
+        return redirect()->back()->with('success', 'Riwayat dan seluruh data terkait berhasil dihapus.');
     }
 }

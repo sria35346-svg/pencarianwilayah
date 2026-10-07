@@ -11,6 +11,14 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 class DataCrawlingImport implements ToModel, WithHeadingRow
 {
     private static ?array $daftarProvinsi = null;
+    private int $importHistoryId;
+    private string $kategori;
+
+    public function __construct(int $importHistoryId, string $kategori)
+    {
+        $this->importHistoryId = $importHistoryId;
+        $this->kategori = $kategori;
+    }
 
     public function model(array $row): Model|array|null
     {
@@ -19,8 +27,9 @@ class DataCrawlingImport implements ToModel, WithHeadingRow
         $provinsi = $this->cariProvinsi($alamat);
 
         return new DataCrawling([
+            'import_history_id' => $this->importHistoryId,
             'nama_tempat' => $row['name'] ?? null,
-            'kategori' => $row['categories'] ?? null,
+            'kategori' => $this->kategori,
             'alamat' => $alamat,
             'provinsi' => $provinsi,
             'kabupaten_kota' => null,

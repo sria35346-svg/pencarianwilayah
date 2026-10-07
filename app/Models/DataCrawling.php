@@ -9,6 +9,7 @@ class DataCrawling extends Model
     protected $table = 'data_crawling';
 
     protected $fillable = [
+        'import_history_id',
         'nama_data',
         'nama_tempat',
         'kategori',

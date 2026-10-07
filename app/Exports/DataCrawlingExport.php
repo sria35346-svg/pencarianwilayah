@@ -11,10 +11,12 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 class DataCrawlingExport implements FromQuery, WithHeadings, WithMapping
 {
     protected ?string $provinsi;
+    protected ?int $importId;
 
-    public function __construct(?string $provinsi = null)
+    public function __construct(?string $provinsi = null, ?int $importId = null)
     {
         $this->provinsi = $provinsi;
+        $this->importId = $importId;
     }
 
     public function query(): Builder
@@ -23,6 +25,10 @@ class DataCrawlingExport implements FromQuery, WithHeadings, WithMapping
 
         if ($this->provinsi !== null && $this->provinsi !== '') {
             $query->where('provinsi', $this->provinsi);
+        }
+        
+        if ($this->importId !== null) {
+            $query->where('import_history_id', $this->importId);
         }
 
         return $query->orderBy('nama_tempat');

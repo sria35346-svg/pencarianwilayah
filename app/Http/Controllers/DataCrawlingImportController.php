@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\DataCrawling;
+use App\Models\ImportHistory;
 use App\Imports\DataCrawlingImport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -13,27 +14,34 @@ class DataCrawlingImportController extends Controller
     public function import(Request $request)
     {
         $request->validate([
-            'file' => 'required|mimes:xlsx,xls,csv|max:20480',
+            'file' => 'required|mimes:xlsx,xls,csv|max:102400',
         ]);
 
         $file = $request->file('file');
 
-        // Mengambil nama file tanpa ekstensi.
-        $namaData = pathinfo(
-            $file->getClientOriginalName(),
-            PATHINFO_FILENAME
-        );
+        // Mengambil nama file dan kategori.
+        $originalFileName = $file->getClientOriginalName();
+        $namaData = pathinfo($originalFileName, PATHINFO_FILENAME);
 
         try {
-            DB::transaction(function () use ($file) {
-                // Menghapus seluruh data lama.
-                DataCrawling::query()->delete();
+            DB::transaction(function () use ($file, $originalFileName, $namaData) {
+                // Membuat record riwayat impor.
+                $history = ImportHistory::create([
+                    'file_name' => $originalFileName,
+                    'kategori' => $namaData,
+                    'total_data' => 0,
+                ]);
 
                 // Mengimpor data dari file Excel baru.
                 Excel::import(
-                    new DataCrawlingImport(),
+                    new DataCrawlingImport($history->id, $namaData),
                     $file
                 );
+                
+                // Update jumlah data untuk riwayat ini.
+                $history->update([
+                    'total_data' => DataCrawling::where('import_history_id', $history->id)->count()
+                ]);
             });
 
             $jumlahData = DataCrawling::count();
@@ -63,9 +71,17 @@ class DataCrawlingImportController extends Controller
     {
         // Mengambil provinsi yang dipilih.
         $provinsi = $request->query('provinsi');
+        $importId = $request->query('import_id');
 
         // Mengambil nama data dari file yang diimpor.
         $namaData = session('namaData', 'data_crawling');
+        
+        if ($importId) {
+            $history = ImportHistory::find($importId);
+            if ($history) {
+                $namaData = $history->kategori;
+            }
+        }
 
         // Mengubah nama provinsi menjadi format nama file.
         if ($provinsi) {
@@ -102,7 +118,7 @@ class DataCrawlingImportController extends Controller
 
         // Mengunduh data sesuai provinsi yang dipilih.
         return Excel::download(
-            new \App\Exports\DataCrawlingExport($provinsi),
+            new \App\Exports\DataCrawlingExport($provinsi, $importId),
             $namaFile
         );
     }
