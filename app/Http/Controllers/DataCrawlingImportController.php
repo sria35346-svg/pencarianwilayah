@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\DataCrawlingExport;
+use App\Imports\DataCrawlingImport;
 use App\Models\DataCrawling;
 use App\Models\ImportHistory;
-use App\Imports\DataCrawlingImport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
@@ -24,7 +25,7 @@ class DataCrawlingImportController extends Controller
         $namaData = pathinfo($originalFileName, PATHINFO_FILENAME);
 
         try {
-            DB::transaction(function () use ($file, $originalFileName, $namaData) {
+            $history = DB::transaction(function () use ($file, $originalFileName, $namaData) {
                 // Membuat record riwayat impor.
                 $history = ImportHistory::create([
                     'file_name' => $originalFileName,
@@ -37,11 +38,13 @@ class DataCrawlingImportController extends Controller
                     new DataCrawlingImport($history->id, $namaData),
                     $file
                 );
-                
+
                 // Update jumlah data untuk riwayat ini.
                 $history->update([
-                    'total_data' => DataCrawling::where('import_history_id', $history->id)->count()
+                    'total_data' => DataCrawling::where('import_history_id', $history->id)->count(),
                 ]);
+
+                return $history;
             });
 
             $jumlahData = DataCrawling::count();
@@ -61,7 +64,7 @@ class DataCrawlingImportController extends Controller
             return redirect('/')
                 ->with(
                     'error',
-                    'Impor gagal. Data lama dipertahankan jika transaksi database berhasil dibatalkan.'
+                    'Impor gagal: '.$e->getMessage()
                 );
         }
     }
@@ -74,7 +77,7 @@ class DataCrawlingImportController extends Controller
 
         $source = $request->query('source');
 
-        if (!$importId && $source !== 'home') {
+        if (! $importId && $source !== 'home') {
             if (session()->has('active_import_id')) {
                 $importId = session('active_import_id');
             } else {
@@ -104,14 +107,14 @@ class DataCrawlingImportController extends Controller
             // Menghilangkan nama provinsi dari akhir nama dataset
             // agar nama provinsi tidak ditulis dua kali.
             $namaDasar = preg_replace(
-                '/_' . preg_quote($namaProvinsi, '/') . '$/i',
+                '/_'.preg_quote($namaProvinsi, '/').'$/i',
                 '',
                 $namaData
             );
 
             $namaDasar = $namaDasar ?: $namaData;
 
-            $namaFile = $namaDasar . '_' . $namaProvinsi . '.xlsx';
+            $namaFile = $namaDasar.'_'.$namaProvinsi.'.xlsx';
 
         } else {
             // Export seluruh provinsi.
@@ -123,12 +126,12 @@ class DataCrawlingImportController extends Controller
 
             $namaDasar = $namaDasar ?: $namaData;
 
-            $namaFile = $namaDasar . '_semua_provinsi.xlsx';
+            $namaFile = $namaDasar.'_semua_provinsi.xlsx';
         }
 
         // Mengunduh data sesuai provinsi yang dipilih.
         return Excel::download(
-            new \App\Exports\DataCrawlingExport($provinsi, $importId),
+            new DataCrawlingExport($provinsi, $importId),
             $namaFile
         );
     }
