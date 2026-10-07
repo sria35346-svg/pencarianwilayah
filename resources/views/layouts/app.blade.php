@@ -680,13 +680,19 @@
         </div>
         <ul class="sidebar-nav">
             <li>
-                <a href="{{ url('/') }}" class="{{ request()->is('/') ? 'active' : '' }}">
-                    <i class="ph ph-database"></i>
-                    <span>Data Crawling</span>
+                <a href="{{ url('/home') }}" class="{{ request()->is('home') ? 'active' : '' }}">
+                    <i class="ph ph-house"></i>
+                    <span>Beranda</span>
                 </a>
             </li>
             <li>
-                <a href="{{ url('/history') }}" class="{{ request()->is('history') ? 'active' : '' }}">
+                <a href="{{ url('/') }}" class="{{ request()->is('/') && !request()->has('import_id') ? 'active' : '' }}">
+                    <i class="ph ph-database"></i>
+                    <span>Import Data</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url('/history') }}" class="{{ request()->is('history') || (request()->is('/') && request()->has('import_id')) ? 'active' : '' }}">
                     <i class="ph ph-clock-counter-clockwise"></i>
                     <span>Riwayat Impor</span>
                 </a>

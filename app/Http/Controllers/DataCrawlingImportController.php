@@ -46,9 +46,8 @@ class DataCrawlingImportController extends Controller
 
             $jumlahData = DataCrawling::count();
 
-            // Menyimpan nama data agar tetap tersedia
-            // ketika pengguna melakukan pencarian provinsi.
-            session()->put('namaData', $namaData);
+            // Simpan ID riwayat ini ke session agar tampil di halaman utama Data Crawling
+            $request->session()->put('active_import_id', $history->id);
 
             return redirect('/')
                 ->with(
@@ -73,9 +72,14 @@ class DataCrawlingImportController extends Controller
         $provinsi = $request->query('provinsi');
         $importId = $request->query('import_id');
 
-        // Mengambil nama data dari file yang diimpor.
-        $namaData = session('namaData', 'data_crawling');
-        
+        if (!$importId) {
+            $latestHistory = ImportHistory::latest()->first();
+            if ($latestHistory) {
+                $importId = $latestHistory->id;
+            }
+        }
+
+        $namaData = 'data_crawling';
         if ($importId) {
             $history = ImportHistory::find($importId);
             if ($history) {

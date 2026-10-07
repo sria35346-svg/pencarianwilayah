@@ -1,119 +1,56 @@
 @extends('layouts.app')
 
-@section('title', 'Import Data')
+@section('title', 'Beranda - Semua Data')
 
 @section('content')
         <div class="header">
-            @if(request('import_id'))
-                <h1>Detail Riwayat: {{ $namaKategoriAktif }}</h1>
-                <p>Melihat detail data dari file yang telah di-import.</p>
-            @else
-                <h1>Import Data</h1>
-                <p>Halaman khusus untuk melakukan import dan melihat sekilas hasil import data terbaru.</p>
-            @endif
+            <h1>Semua Data Crawling</h1>
+            <p>Sistem pencarian dan pengelompokan seluruh data hasil crawling berdasarkan kategori dan wilayah.</p>
         </div>
-
-        {{-- Notifikasi berhasil --}}
-        @if (session('success'))
-            <div class="alert alert-success">
-                {{ session('success') }}
-            </div>
-        @endif
-
-
-
-        @if(!request('import_id'))
-        <div class="card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
-            <div>
-                <h2 style="margin-bottom: 8px;">Informasi Kategori</h2>
-                <p>
-                    <strong>Nama Kategori Aktif:</strong>
-                    {{ $namaKategoriAktif }}
-                </p>
-            </div>
-            
-            <form action="{{ route('data-crawling.reset-view') }}" method="POST">
-                @csrf
-                <button type="submit" class="btn btn-secondary" style="width: auto; padding: 10px 20px; font-weight: 600; gap: 8px;">
-                    <i class="ph ph-arrow-counter-clockwise"></i>
-                    Reset Tampilan
-                </button>
-            </form>
-        </div>
-        @endif
-
-        {{-- Notifikasi kesalahan --}}
-        @if (session('error'))
-            <div class="alert alert-danger">
-                {{ session('error') }}
-            </div>
-        @endif
-
-        @if ($errors->any())
-            <div class="alert alert-danger">
-                <strong>Terjadi kesalahan!</strong>
-                <ul>
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
-
-        {{-- Form import Excel --}}
-        @if(!request('import_id'))
-        <div class="card">
-            <h2>Import Data Excel</h2>
-
-            <form action="{{ route('data-crawling.import') }}"
-                  method="POST"
-                  enctype="multipart/form-data">
-
-                @csrf
-
-                <div class="form-group">
-                    <label for="file">Pilih File Excel</label>
-                    <input
-                        type="file"
-                        name="file"
-                        id="file"
-                        accept=".xlsx,.xls,.csv"
-                        required
-                    >
-                </div>
-
-                <button type="submit" class="btn btn-primary">
-                    Import Data
-                </button>
-            </form>
-        </div>
-        @endif
 
         {{-- Statistik data --}}
         <div class="stats">
             <div class="stat-card">
-                <h3>Jumlah Data Baru</h3>
+                <h3>Total Seluruh Data</h3>
                 <div class="number">
-                    {{ number_format($totalData, 0, ',', '.') }}
+                    {{ number_format($totalDataKeseluruhan, 0, ',', '.') }}
                 </div>
             </div>
 
             <div class="stat-card">
-                <h3>Jumlah Pencarian Provinsi</h3>
+                <h3>Total Hasil Pencarian</h3>
                 <div class="number">
-                    {{ request('provinsi') ? number_format($totalHasilPencarian, 0, ',', '.') : '0' }}
+                    {{ number_format($totalHasilPencarian, 0, ',', '.') }}
                 </div>
             </div>
         </div>
 
-        {{-- Form pencarian provinsi --}}
+        {{-- Form pencarian kategori dan provinsi --}}
         <div class="card">
-            <h2>Pencarian Berdasarkan Wilayah</h2>
+            <h2>Filter Pencarian Data</h2>
 
-            <form action="{{ url('/') }}" method="GET" class="filter-form">
-                @if(request('import_id'))
-                    <input type="hidden" name="import_id" value="{{ request('import_id') }}">
-                @endif
+            <form action="{{ url('/home') }}" method="GET" class="filter-form">
+                <div class="form-group">
+                    <label for="import_id">Pilih Kategori (Berdasarkan File)</label>
+
+                    <select name="import_id" id="import_id">
+                        <option value="">Semua Kategori</option>
+
+                        @forelse ($daftarKategori as $kategori)
+                            <option
+                                value="{{ $kategori->id }}"
+                                {{ request('import_id') == $kategori->id ? 'selected' : '' }}
+                            >
+                                {{ $kategori->kategori }}
+                            </option>
+                        @empty
+                            <option value="" disabled>
+                                Belum ada kategori yang tersedia
+                            </option>
+                        @endforelse
+                    </select>
+                </div>
+
                 <div class="form-group">
                     <label for="provinsi">Pilih Provinsi</label>
 
@@ -140,7 +77,7 @@
                         Cari Data
                     </button>
 
-                    <a href="{{ url('/') }}" class="btn btn-secondary">
+                    <a href="{{ url('/home') }}" class="btn btn-secondary">
                         Reset
                     </a>
                 </div>
