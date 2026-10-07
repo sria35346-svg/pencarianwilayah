@@ -72,10 +72,16 @@ class DataCrawlingImportController extends Controller
         $provinsi = $request->query('provinsi');
         $importId = $request->query('import_id');
 
-        if (!$importId) {
-            $latestHistory = ImportHistory::latest()->first();
-            if ($latestHistory) {
-                $importId = $latestHistory->id;
+        $source = $request->query('source');
+
+        if (!$importId && $source !== 'home') {
+            if (session()->has('active_import_id')) {
+                $importId = session('active_import_id');
+            } else {
+                $latestHistory = ImportHistory::latest()->first();
+                if ($latestHistory) {
+                    $importId = $latestHistory->id;
+                }
             }
         }
 

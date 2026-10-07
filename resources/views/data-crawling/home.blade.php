@@ -100,7 +100,7 @@
                     </span>
 
                     <a
-                        href="{{ route('data-crawling.export', request()->only(['provinsi', 'import_id'])) }}"
+                        href="{{ route('data-crawling.export', array_merge(request()->only(['provinsi', 'import_id']), ['source' => 'home'])) }}"
                         class="btn btn-success"
                     >
                         Download Excel
